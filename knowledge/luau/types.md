@@ -4,7 +4,7 @@ Start every script with `--!strict` on the first line. The editor then flags nil
 
 ## Annotating code
 
-```luau
+```lua
 --!strict
 export type Item = {
 	id: string,
