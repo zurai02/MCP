@@ -131,11 +131,22 @@ export function reviewLuau(code) {
   findings.sort((a, b) => a.line - b.line);
 
   if (findings.length === 0) {
-    return "No issues from the automatic checks. These are quick pattern checks, not a full analyzer, so still read the code through once.";
+    return "No issues from the automatic checks (pattern checks only, not a full analyzer).";
   }
 
-  const rows = findings.map(
-    (f) => `- line ${f.line} [${f.severity}] ${f.message} Fix: ${f.fix}`
-  );
-  return `Found ${findings.length} issue${findings.length === 1 ? "" : "s"}:\n${rows.join("\n")}`;
+  // Group repeats so a script with 30 `wait()` calls costs one row, not thirty.
+  const groups = new Map();
+  for (const f of findings) {
+    const key = `${f.severity}|${f.message}`;
+    const g = groups.get(key) || { ...f, lines: [] };
+    g.lines.push(f.line);
+    groups.set(key, g);
   }
+  const where = (lines) => {
+    const shown = lines.slice(0, 8).join(", ");
+    const more = lines.length > 8 ? ` +${lines.length - 8} more` : "";
+    return `${lines.length === 1 ? "line" : "lines"} ${shown}${more}`;
+  };
+  const rows = [...groups.values()].map((g) => `- [${g.severity}] ${where(g.lines)}: ${g.message} ${g.fix}`);
+  return `${findings.length} issue${findings.length === 1 ? "" : "s"}:\n${rows.join("\n")}`;
+}
