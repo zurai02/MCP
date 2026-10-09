@@ -4,25 +4,36 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { loadKnowledge } from "./src/knowledge.js";
 import { reviewLuau } from "./src/review.js";
+import { approxTokens, compactLuau, formatSearch, listTopics, render, search } from "./src/compress.js";
 
 const knowledge = loadKnowledge();
 
-const INSTRUCTIONS = `You are working as an experienced Roblox developer. When the user asks for Luau code, UI, builds or help in Roblox Studio:
-- Look up the matching topic with the tools before writing code (luau_guidelines, ui_pattern, studio_guide, gameplay_recipe). Use list_topics to see what exists.
-- Write modern Luau: --!strict, type annotations, the task library, :Connect, game:GetService, no deprecated APIs.
-- Say first where each script goes (container and script type) and list every instance it expects, with names and classes.
-- Never trust the client. Validate every RemoteEvent and RemoteFunction argument on the server.
-- Build UI with scale-based sizing and constraints so it works on phones and desktops.
-- Before presenting non-trivial Luau, run it through review_luau and fix what it flags.
-- End with short test steps for Studio and the most likely thing to go wrong.`;
+// Sent to Claude once per session, so it is kept short on purpose.
+const INSTRUCTIONS = `You are an experienced Roblox developer (Luau, 2D UI, Studio).
+Save tokens: use search_knowledge, or a lookup with detail="brief" or an outline, then fetch only the section you need. Use detail="full" when you need the code. compress_luau output is for reading only: never save it over a user's script.
+- Look up the matching topic before writing code (luau_guidelines, ui_pattern, studio_guide, gameplay_recipe, list_topics).
+- Write modern Luau: --!strict, types, task library, :Connect, game:GetService, no deprecated APIs.
+- Say where each script goes (container, script type) and which instances it expects.
+- Never trust the client: validate every remote argument on the server.
+- Build UI with scale sizing and constraints so it works on phones and desktops.
+- Run non-trivial Luau through review_luau and fix what it flags.
+- If Roblox Studio's own MCP tools are connected, make the change there instead of pasting: read the existing script first, change the smallest part, use the right container, then check Output or playtest. Confirm which Studio is active. Ask before deleting or overwriting anything the user did not mention. Details: studio_guide topic "studio-mcp".
+- If Studio is not connected, give paste-ready code and say where it goes.
+- End with short test steps and the most likely thing to go wrong.`;
 
 const server = new McpServer(
-  { name: "roblox-luau", version: "1.0.0" },
+  { name: "roblox-luau", version: "1.1.0" },
   { instructions: INSTRUCTIONS }
 );
 
 const reply = (text) => ({ content: [{ type: "text", text }] });
+const fail = (text) => ({ isError: true, ...reply(text) });
 const keysOf = (category) => Object.keys(knowledge[category]);
+
+// Short parameter descriptions: every word here is sent to Claude in every session.
+const detailParam = z.enum(["outline", "brief", "full", "raw"]).optional().describe("outline | brief (no code) | full (default) | raw");
+const sectionParam = z.string().optional().describe("Only the section with this heading");
+const budgetParam = z.number().int().min(100).max(20000).optional().describe("Approx token cap");
 
 function registerLookup({ tool, category, arg, title, description }) {
   const keys = keysOf(category);
@@ -31,15 +42,23 @@ function registerLookup({ tool, category, arg, title, description }) {
     tool,
     {
       title,
-      description: `${description} Available: ${keys.join(", ")}.`,
-      inputSchema: { [arg]: z.enum(keys).describe(`One of: ${keys.join(", ")}`) },
+      description,
+      inputSchema: {
+        [arg]: z.enum(keys),
+        detail: detailParam,
+        section: sectionParam,
+        max_tokens: budgetParam,
+      },
     },
     async (args) => {
       const entry = knowledge[category][args[arg]];
-      if (!entry) {
-        return { isError: true, ...reply(`Unknown ${arg}. Available: ${keys.join(", ")}`) };
-      }
-      return reply(entry.text);
+      if (!entry) return fail(`Unknown ${arg}. Available: ${keys.join(", ")}`);
+      const out = render(entry.text, {
+        detail: args.detail ?? "full",
+        section: args.section,
+        maxTokens: args.max_tokens,
+      });
+      return out.error ? fail(out.text) : reply(out.text);
     }
   );
 }
@@ -49,7 +68,7 @@ registerLookup({
   category: "luau",
   arg: "topic",
   title: "Luau guidelines",
-  description: "Get best-practice guidance and examples for writing Luau (types, performance, events, modules, errors, remotes, DataStores).",
+  description: "Luau best practice: types, events, modules, remotes, DataStores, performance.",
 });
 
 registerLookup({
@@ -57,7 +76,7 @@ registerLookup({
   category: "ui",
   arg: "pattern",
   title: "Roblox UI patterns",
-  description: "Get layout rules and working code for building 2D Roblox UI (menus, HUDs, inventories, tweens).",
+  description: "2D UI layout rules and working code: menus, HUD, inventory, tweens.",
 });
 
 registerLookup({
@@ -65,7 +84,7 @@ registerLookup({
   category: "studio",
   arg: "topic",
   title: "Roblox Studio guide",
-  description: "Learn where scripts and assets belong in Roblox Studio and how to work through a build-test-fix loop.",
+  description: "Where scripts go, debugging, and editing Studio directly through its own MCP.",
 });
 
 registerLookup({
@@ -73,33 +92,61 @@ registerLookup({
   category: "recipes",
   arg: "recipe",
   title: "Gameplay recipes",
-  description: "Get a complete, ready-to-paste script for a common game mechanic.",
+  description: "Complete scripts for common mechanics.",
 });
+
+server.registerTool(
+  "search_knowledge",
+  {
+    title: "Search knowledge",
+    description: "Find the best-matching sections across all guides. Cheaper than reading whole topics. Returns the exact lookup call for each hit.",
+    inputSchema: {
+      query: z.string().min(2),
+      limit: z.number().int().min(1).max(8).optional().describe("Default 3"),
+    },
+  },
+  async ({ query, limit }) => reply(formatSearch(search(knowledge, query, { limit: limit ?? 3 })))
+);
 
 server.registerTool(
   "review_luau",
   {
     title: "Review Luau code",
-    description:
-      "Run quick checks on Luau code for deprecated APIs, missing strict mode, global functions, unvalidated remotes, unprotected DataStore calls and loops that never yield. Returns a list of issues with line numbers and fixes.",
-    inputSchema: { code: z.string().min(1).describe("The Luau source to check") },
+    description: "Quick checks for deprecated APIs, missing --!strict, global functions, unvalidated remotes, unprotected DataStore calls, loops with no yield.",
+    inputSchema: { code: z.string().min(1) },
   },
   async ({ code }) => reply(reviewLuau(code))
+);
+
+server.registerTool(
+  "compress_luau",
+  {
+    title: "Compress Luau for reading",
+    description: "Strips comments, blank lines and trailing spaces so a long script costs fewer tokens to read. Read-only view: never write it back over a user's script.",
+    inputSchema: {
+      code: z.string().min(1),
+      level: z.enum(["light", "aggressive"]).optional().describe("aggressive also shrinks indentation"),
+    },
+  },
+  async ({ code, level }) => {
+    const r = compactLuau(code, level ?? "light");
+    const saved = Math.max(0, approxTokens(code) - approxTokens(r.code));
+    return {
+      content: [
+        { type: "text", text: r.code },
+        { type: "text", text: `(read-only view, about ${saved} tokens saved)` },
+      ],
+    };
+  }
 );
 
 server.registerTool(
   "list_topics",
   {
     title: "List topics",
-    description: "List every guideline, UI pattern, Studio guide and recipe this server can provide.",
+    description: "Every topic, grouped by the tool that serves it.",
   },
-  async () => {
-    const sections = Object.entries(knowledge).map(([category, entries]) => {
-      const rows = Object.values(entries).map((e) => `  - ${e.name}: ${e.title}`);
-      return `${category}:\n${rows.join("\n")}`;
-    });
-    return reply(sections.join("\n\n"));
-  }
+  async () => reply(listTopics(knowledge))
 );
 
 server.registerPrompt(
