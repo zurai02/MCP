@@ -1,0 +1,73 @@
+{
+
+  "name": "roblox-luau-mcp",
+
+  "version": "1.0.0",
+
+  "description": "MCP server that gives Claude the working knowledge of an experienced Luau and Roblox Studio developer.",
+
+  "type": "module",
+
+  "bin": {
+
+    "roblox-luau-mcp": "server.js"
+
+  },
+
+  "files": [
+
+    "server.js",
+
+    "src",
+
+    "knowledge",
+
+    "README.md"
+
+  ],
+
+  "scripts": {
+
+    "start": "node server.js",
+
+    "test": "node test/smoke.mjs"
+
+  },
+
+  "engines": {
+
+    "node": ">=18"
+
+  },
+
+  "keywords": [
+
+    "mcp",
+
+    "roblox",
+
+    "luau",
+
+    "roblox-studio",
+
+    "claude"
+
+  ],
+
+  "repository": {
+
+    "type": "git",
+
+    "url": "git+https://github.com/zurai02/MCP.git"
+
+  },
+
+  "dependencies": {
+
+    "@modelcontextprotocol/sdk": "^1.17.0",
+
+    "zod": "^3.25.0"
+
+  }
+
+}
