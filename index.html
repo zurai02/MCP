@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP for Luau and Roblox Studio</title>
+<meta name="description" content="An MCP for Claude that turns it into an experienced Luau developer: scripts, UI and builds for Roblox Studio.">
+<meta property="og:title" content="MCP for Luau and Roblox Studio">
+<meta property="og:description" content="Give Claude the habits of a seasoned Roblox developer: strict Luau, clean UI, sane project structure.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232A6BFF'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E8ECF1;
+  --bg-2:#DCE2EA;
+  --ink:#12161D;
+  --ink-2:#4A5361;
+  --line:#BFC8D4;
+  --blue:#2A6BFF;
+  --brick:#D8452F;
+  --code-bg:#12161D;
+  --code-ink:#DCE3EE;
+  --code-dim:#7C8799;
+  --k:#8FB4FF;
+  --s:#9FD8A6;
+  --c:#7C8799;
+  --f:#F2C879;
+  --t:#C9A7FF;
+  --stud:rgba(18,22,29,.09);
+  --font:"Bricolage Grotesque",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#171B22;
+    --bg-2:#1E232C;
+    --ink:#E8ECF1;
+    --ink-2:#9AA4B3;
+    --line:#2D3440;
+    --blue:#6B97FF;
+    --brick:#F0735E;
+    --code-bg:#0E1117;
+    --stud:rgba(232,236,241,.06);
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--font);font-size:17px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--blue);outline-offset:3px;border-radius:4px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+
+/* header */
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0}
+.mark{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.01em;text-decoration:none}
+.mark i{width:26px;height:26px;border-radius:6px;background:var(--blue);display:grid;place-items:center}
+.mark i::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--bg)}
+nav.links{display:flex;gap:22px;align-items:center;font-size:15px}
+nav.links a{text-decoration:none;color:var(--ink-2)}
+nav.links a:hover{color:var(--ink)}
+nav.links .gh{color:var(--ink);font-weight:600;border:1.5px solid var(--ink);padding:6px 14px;border-radius:999px}
+nav.links .gh:hover{background:var(--ink);color:var(--bg)}
+@media (max-width:640px){nav.links a:not(.gh){display:none}}
+
+/* hero */
+.hero{position:relative;padding:48px 0 72px}
+.hero::before{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background-image:radial-gradient(circle at center,var(--stud) 0 6px,transparent 7px);
+  background-size:40px 40px;
+  -webkit-mask-image:linear-gradient(to bottom,#000 55%,transparent);
+  mask-image:linear-gradient(to bottom,#000 55%,transparent);
+}
+.hero-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:48px;align-items:center}
+h1{
+  font-size:clamp(40px,6.4vw,76px);line-height:.98;letter-spacing:-.035em;font-weight:800;margin:0 0 22px;
+  font-variation-settings:"opsz" 96;
+}
+.lede{font-size:19px;color:var(--ink-2);max-width:34em;margin:0 0 28px}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+.btn{
+  display:inline-block;font:inherit;font-weight:600;font-size:16px;text-decoration:none;cursor:pointer;
+  padding:13px 22px;border-radius:10px;border:1.5px solid var(--ink);background:var(--ink);color:var(--bg);
+}
+.btn:hover{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+@media (max-width:860px){.hero-grid{grid-template-columns:1fr;gap:36px}}
+
+/* compare panel */
+.panel{background:var(--code-bg);border-radius:14px;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 24px 48px -24px rgba(18,22,29,.5)}
+.tabs{display:flex;border-bottom:1px solid rgba(255,255,255,.08)}
+.tab{
+  flex:1;font:inherit;font-size:14px;font-weight:600;color:var(--code-dim);background:none;border:0;
+  padding:13px 16px;cursor:pointer;text-align:left;border-bottom:3px solid transparent;
+}
+.tab[aria-selected="true"]{color:#fff;border-bottom-color:var(--blue)}
+.tab[data-v="plain"][aria-selected="true"]{border-bottom-color:var(--brick)}
+.tab:hover{color:#fff}
+pre{margin:0;padding:20px;overflow-x:auto;font-family:var(--mono);font-size:13.5px;line-height:1.65;color:var(--code-ink);tab-size:4}
+pre code{font-family:inherit}
+.k{color:var(--k)}.s{color:var(--s)}.c{color:var(--c);font-style:italic}.f{color:var(--f)}.t{color:var(--t)}
+.notes{margin:0;padding:14px 20px 18px;list-style:none;border-top:1px solid rgba(255,255,255,.08);font-size:14px;color:var(--code-dim);display:grid;gap:4px}
+.notes li::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:10px;background:var(--blue)}
+.notes.bad li::before{background:var(--brick)}
+[hidden]{display:none!important}
+
+/* sections */
+section{padding:72px 0;border-top:1px solid var(--line)}
+h2{font-size:clamp(30px,4.2vw,48px);line-height:1.05;letter-spacing:-.03em;font-weight:800;margin:0 0 14px}
+.sub{color:var(--ink-2);max-width:38em;margin:0 0 44px;font-size:18px}
+
+.areas{display:grid;gap:0}
+.area{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,7fr);gap:32px;padding:28px 0;border-top:1px solid var(--line)}
+.area:first-child{border-top:0;padding-top:0}
+.area h3{font-size:28px;line-height:1.1;letter-spacing:-.02em;margin:0;font-weight:800}
+.area p{margin:0 0 12px;color:var(--ink-2)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.chips li{font-family:var(--mono);font-size:12.5px;padding:4px 10px;border-radius:6px;background:var(--bg-2);color:var(--ink)}
+@media (max-width:760px){.area{grid-template-columns:1fr;gap:10px}}
+
+ol.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;counter-reset:s}
+ol.steps li{counter-increment:s;padding-top:18px;border-top:3px solid var(--ink)}
+ol.steps li::before{content:counter(s);display:block;font-weight:800;font-size:15px;color:var(--blue);margin-bottom:6px}
+ol.steps b{display:block;font-size:19px;letter-spacing:-.01em;margin-bottom:6px}
+ol.steps span{color:var(--ink-2);font-size:15.5px}
+@media (max-width:860px){ol.steps{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){ol.steps{grid-template-columns:1fr}}
+
+.install-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:40px;align-items:start}
+@media (max-width:860px){.install-grid{grid-template-columns:1fr}}
+.install-grid ol{margin:0;padding-left:20px;display:grid;gap:12px;color:var(--ink-2)}
+.install-grid ol b{color:var(--ink)}
+.codebar{display:flex;justify-content:space-between;align-items:center;padding:10px 12px 10px 20px;border-bottom:1px solid rgba(255,255,255,.08);font-family:var(--mono);font-size:12.5px;color:var(--code-dim)}
+.copy{font:inherit;font-family:var(--font);font-size:13px;font-weight:600;color:#fff;background:rgba(255,255,255,.1);border:0;border-radius:6px;padding:6px 12px;cursor:pointer}
+.copy:hover{background:var(--blue)}
+.note{font-size:14px;color:var(--ink-2);margin-top:14px}
+
+.prompts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.prompts{grid-template-columns:1fr}}
+.prompt{
+  font:inherit;text-align:left;cursor:pointer;color:var(--ink);background:var(--bg-2);
+  border:1.5px solid transparent;border-radius:10px;padding:16px 18px;font-size:16px;line-height:1.45;
+}
+.prompt:hover{border-color:var(--blue)}
+.prompt small{display:block;margin-top:8px;font-size:13px;color:var(--ink-2)}
+.prompt.done small{color:var(--blue);font-weight:600}
+
+details{border-top:1px solid var(--line);padding:18px 0}
+details:last-of-type{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;font-weight:600;font-size:19px;letter-spacing:-.01em;list-style:none;display:flex;justify-content:space-between;gap:16px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-weight:400;font-size:24px;line-height:1;color:var(--ink-2)}
+details[open] summary::after{content:"\2212"}
+details p{margin:12px 0 0;color:var(--ink-2);max-width:44em}
+
+footer{padding:36px 0 56px;border-top:1px solid var(--line);color:var(--ink-2);font-size:14.5px}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="mark" href="#top"><i aria-hidden="true"></i>MCP</a>
+    <nav class="links" aria-label="Main">
+      <a href="#covers">What it covers</a>
+      <a href="#how">How it works</a>
+      <a href="#install">Install</a>
+      <a href="#faq">FAQ</a>
+      <a class="gh" href="https://github.com/zurai02/MCP">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <div class="hero">
+      <div class="hero-grid">
+        <div>
+          <h1>Claude, with a Roblox developer's habits.</h1>
+          <p class="lede">This MCP gives Claude the working knowledge of an experienced Luau programmer, UI builder and Studio user. You ask for a script, a menu or a mechanic. It comes back typed, structured and ready to paste into Studio.</p>
+          <div class="cta">
+            <a class="btn" href="#install">Add it to Claude</a>
+            <a class="btn ghost" href="https://github.com/zurai02/MCP">View the source</a>
+          </div>
+        </div>
+
+        <div class="panel" role="group" aria-label="Same request, two results">
+          <div class="tabs" role="tablist">
+            <button class="tab" role="tab" id="t-plain" data-v="plain" aria-selected="true" aria-controls="v-plain">Without the MCP</button>
+            <button class="tab" role="tab" id="t-mcp" data-v="mcp" aria-selected="false" aria-controls="v-mcp">With the MCP</button>
+          </div>
+          <div id="v-plain" role="tabpanel" aria-labelledby="t-plain">
+<pre><code><span class="c">-- "make a kill brick"</span>
+<span class="k">local</span> part = script.Parent
+
+<span class="k">function</span> <span class="f">onTouch</span>(hit)
+    <span class="k">local</span> humanoid = hit.Parent:<span class="f">FindFirstChild</span>(<span class="s">"Humanoid"</span>)
+    <span class="k">if</span> humanoid <span class="k">then</span>
+        humanoid.Health = <span class="t">0</span>
+    <span class="k">end</span>
+<span class="k">end</span>
+
+part.Touched:<span class="f">connect</span>(onTouch)</code></pre>
+            <ul class="notes bad">
+              <li>Global function and deprecated <code>:connect</code></li>
+              <li>No types, so mistakes show up at runtime</li>
+              <li>Fires over and over on a single touch</li>
+            </ul>
+          </div>
+          <div id="v-mcp" role="tabpanel" aria-labelledby="t-mcp" hidden>
+<pre><code><span class="c">--!strict</span>
+<span class="k">local</span> Players = game:<span class="f">GetService</span>(<span class="s">"Players"</span>)
+
+<span class="k">local</span> part = script.Parent :: BasePart
+<span class="k">local</span> COOLDOWN = <span class="t">1</span>
+<span class="k">local</span> lastHit: {[Player]: <span class="t">number</span>} = {}
+
+part.Touched:<span class="f">Connect</span>(<span class="k">function</span>(hit: BasePart)
+    <span class="k">local</span> character = hit.Parent :: Model?
+    <span class="k">local</span> player = character <span class="k">and</span> Players:<span class="f">GetPlayerFromCharacter</span>(character)
+    <span class="k">local</span> humanoid = character <span class="k">and</span> character:<span class="f">FindFirstChildOfClass</span>(<span class="s">"Humanoid"</span>)
+    <span class="k">if not</span> player <span class="k">or not</span> humanoid <span class="k">then return end</span>
+
+    <span class="k">local</span> now = <span class="f">os.clock</span>()
+    <span class="k">if</span> now - (lastHit[player] <span class="k">or</span> <span class="t">0</span>) &lt; COOLDOWN <span class="k">then return end</span>
+    lastHit[player] = now
+
+    humanoid.Health = <span class="t">0</span>
+<span class="k">end</span>)
+
+Players.PlayerRemoving:<span class="f">Connect</span>(<span class="k">function</span>(player: Player)
+    lastHit[player] = <span class="k">nil</span>
+<span class="k">end</span>)</code></pre>
+            <ul class="notes">
+              <li>Strict mode, typed, services fetched once</li>
+              <li>Only real players trigger it, with a per-player cooldown</li>
+              <li>Cleans up after players leave</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section id="covers">
+      <h2>What it covers</h2>
+      <p class="sub">Four areas where generic answers fall apart in Roblox, and where this MCP keeps Claude on track.</p>
+      <div class="areas">
+        <div class="area">
+          <h3>Luau scripting</h3>
+          <div>
+            <p>Modern, strict Luau: type annotations, the <code>task</code> library, clean module structure, events instead of polling, and the client/server split done properly with RemoteEvents and RemoteFunctions that validate what the client sends.</p>
+            <ul class="chips"><li>--!strict</li><li>ModuleScripts</li><li>RemoteEvents</li><li>DataStores</li><li>task.spawn</li><li>Signals</li></ul>
+          </div>
+        </div>
+        <div class="area">
+          <h3>2D apps and UI</h3>
+          <div>
+            <p>Menus, HUDs, inventories, shops and dialogs built from ScreenGuis and layout objects. Sizing uses scale first and offset second, so interfaces hold up on phones, tablets and wide monitors.</p>
+            <ul class="chips"><li>ScreenGui</li><li>UIListLayout</li><li>UIGridLayout</li><li>UIAspectRatioConstraint</li><li>TweenService</li><li>Mobile safe areas</li></ul>
+          </div>
+        </div>
+        <div class="area">
+          <h3>Building and gameplay</h3>
+          <div>
+            <p>Parts, models, spawners, doors, pickups, obstacle courses and round systems, with scripts organised so you can duplicate and tweak them without breaking everything else.</p>
+            <ul class="chips"><li>Models</li><li>CollectionService tags</li><li>Raycasting</li><li>Attributes</li><li>Round loops</li><li>Leaderstats</li></ul>
+          </div>
+        </div>
+        <div class="area">
+          <h3>Studio workflow</h3>
+          <div>
+            <p>Claude knows where each script belongs (ServerScriptService, ReplicatedStorage, StarterGui, StarterPlayerScripts) and tells you where to put it. It also reads Output errors with you and fixes the actual cause.</p>
+            <ul class="chips"><li>Explorer layout</li><li>Script types</li><li>Output debugging</li><li>Test servers</li><li>Rojo projects</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how">
+      <h2>How a session goes</h2>
+      <p class="sub">You keep chatting with Claude the way you already do. The MCP works behind the scenes.</p>
+      <ol class="steps">
+        <li><b>You ask</b><span>"Add a shop UI with a coin counter." Plain language is fine.</span></li>
+        <li><b>Claude pulls context</b><span>The MCP supplies Luau and Roblox conventions that fit the request.</span></li>
+        <li><b>Claude writes it</b><span>Typed scripts and UI structure, each labeled with where it goes in Studio.</span></li>
+        <li><b>You test and refine</b><span>Paste an Output error or describe what looks wrong, and iterate.</span></li>
+      </ol>
+    </section>
+
+    <section id="install">
+      <h2>Add it to Claude</h2>
+      <p class="sub">Connect the MCP once and it is available in every chat that has it switched on.</p>
+      <div class="install-grid">
+        <ol>
+          <li><b>Open Claude Desktop</b>, go to Settings, then Developer, then Edit Config. This opens <code>claude_desktop_config.json</code>.</li>
+          <li><b>Paste the config</b> from this page and save it. If the file already has <code>mcpServers</code>, add <code>roblox-luau</code> inside it.</li>
+          <li><b>Fully quit and reopen Claude</b>, then start a chat and ask for some Luau.</li>
+        </ol>
+        <div>
+          <div class="panel">
+            <div class="codebar"><span>claude config</span><button class="copy" type="button" data-copy="cfg">Copy</button></div>
+<pre id="cfg"><code>{
+  "mcpServers": {
+    "roblox-luau": {
+      "command": "npx",
+      "args": ["-y", "github:zurai02/MCP"]
+    }
+  }
+}</code></pre>
+          </div>
+          <p class="note">Needs Node.js 18 or newer. The first start downloads the server from GitHub, so it can take a few seconds. Using Claude Code instead? Run <code>claude mcp add --transport stdio roblox-luau -- npx -y github:zurai02/MCP</code>. <a href="mcp.html">Open the full install guide</a> for a config merger and fixes for common problems.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="prompts">
+      <h2>Try asking for</h2>
+      <p class="sub">Tap a prompt to copy it, then paste it into Claude.</p>
+      <div class="prompts">
+        <button class="prompt" type="button">Build a main menu with Play, Settings and Credits buttons that tween in, and make it work on mobile.<small>Tap to copy</small></button>
+        <button class="prompt" type="button">Write a coin collection system with a leaderstat, a pickup sound and a respawn timer.<small>Tap to copy</small></button>
+        <button class="prompt" type="button">Make a 10-stage obstacle course with checkpoints that save progress.<small>Tap to copy</small></button>
+        <button class="prompt" type="button">My script throws "attempt to index nil with 'Parent'". Here is the code and the Output. Fix it.<small>Tap to copy</small></button>
+        <button class="prompt" type="button">Create an inventory screen with a grid of item slots, a tooltip on hover and drag to reorder.<small>Tap to copy</small></button>
+        <button class="prompt" type="button">Refactor this 400-line Script into ModuleScripts and explain where each file goes.<small>Tap to copy</small></button>
+      </div>
+    </section>
+
+    <section id="faq">
+      <h2>Questions</h2>
+      <p class="sub"></p>
+      <details>
+        <summary>What is an MCP?</summary>
+        <p>MCP stands for Model Context Protocol. It is a standard way to plug extra knowledge and tools into an AI assistant like Claude, so it can do specialised work better than it would on its own.</p>
+      </details>
+      <details>
+        <summary>Does it edit my game in Roblox Studio directly?</summary>
+        <p>Claude writes the scripts, UI layouts and build instructions, and tells you where they go. You copy them into Studio. Check the GitHub page for anything the current version does beyond that.</p>
+      </details>
+      <details>
+        <summary>Is it only for experienced developers?</summary>
+        <p>No. Beginners can ask for a finished feature and get commented code that explains itself. Experienced developers get strict, structured code they can drop into an existing project.</p>
+      </details>
+      <details>
+        <summary>Does it work for 2D games and apps?</summary>
+        <p>Yes. Roblox UI is 2D by nature, so menus, HUDs, shops and 2D-style mini-games built from GUI objects are a core focus.</p>
+      </details>
+      <details>
+        <summary>Something went wrong. Where do I report it?</summary>
+        <p>Open an issue on the GitHub repository and include the prompt you used and what Claude returned.</p>
+      </details>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>MCP for Luau and Roblox Studio</span>
+    <span>An independent project, not affiliated with Roblox Corporation.</span>
+    <a href="https://github.com/zurai02/MCP">github.com/zurai02/MCP</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // Compare tabs
+  var tabs = document.querySelectorAll('.tab');
+  tabs.forEach(function(tab){
+    tab.addEventListener('click', function(){
+      tabs.forEach(function(t){
+        var on = t === tab;
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        document.getElementById('v-' + t.dataset.v).hidden = !on;
+      });
+    });
+  });
+
+  function copyText(text){
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise(function(resolve, reject){
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+        resolve();
+      } catch (e) { reject(e); }
+    });
+  }
+
+  // Config copy button
+  document.querySelectorAll('.copy').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var el = document.getElementById(btn.dataset.copy);
+      copyText(el.innerText.trim()).then(function(){
+        btn.textContent = 'Copied';
+        setTimeout(function(){ btn.textContent = 'Copy'; }, 1800);
+      }, function(){
+        btn.textContent = 'Press Ctrl+C';
+      });
+    });
+  });
+
+  // Prompt copy cards
+  document.querySelectorAll('.prompt').forEach(function(card){
+    card.addEventListener('click', function(){
+      var label = card.querySelector('small');
+      var text = card.childNodes[0].textContent.trim();
+      copyText(text).then(function(){
+        card.classList.add('done'); label.textContent = 'Copied';
+        setTimeout(function(){ card.classList.remove('done'); label.textContent = 'Tap to copy'; }, 1800);
+      }, function(){
+        label.textContent = 'Copy failed. Select the text instead.';
+      });
+    });
+  });
+})();
+</script>
+</body>
+  </html>
