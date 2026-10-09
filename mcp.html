@@ -194,8 +194,22 @@ footer{padding:32px 0 52px;border-top:1px solid var(--line);color:var(--ink-2);f
       <ul class="check">
         <li><span><b>Tools appear.</b> You see <code>roblox-luau</code> in the tools menu, with luau_guidelines, ui_pattern, studio_guide, gameplay_recipe, review_luau and list_topics.</span></li>
         <li><span><b>A real request.</b> Ask: "Use list_topics, then write me a kill brick." Claude should call the tools and answer with a script that starts with <code>--!strict</code>.</span></li>
+        <li><span><b>Cheap lookups.</b> Ask: "Search the guides for how to validate remote arguments." Claude should call <code>search_knowledge</code> and fetch one section, not a whole file.</span></li>
         <li><span><b>The review tool.</b> Paste some old Luau that uses <code>wait()</code> and ask Claude to run review_luau on it. It should flag <code>wait()</code> and suggest <code>task.wait()</code>.</span></li>
       </ul>
+    </section>
+
+    <section id="studio">
+      <h2>Let Claude edit Studio directly</h2>
+      <p class="sub">Roblox Studio has its own MCP server. Turn it on next to this one. This MCP brings the Roblox know-how and checks, and Studio's server lets Claude read, edit and test scripts in your open place.</p>
+      <ol class="steps">
+        <li><b>Open your place in Roblox Studio</b> and open Assistant.</li>
+        <li><b>Open the three-dot menu</b>, then Manage MCP Servers.</li>
+        <li><b>Turn on "Enable Studio as MCP server".</b></li>
+        <li><b>Under Quick Connect</b>, turn on Claude Desktop or Claude Code. A green indicator means it is connected.</li>
+        <li><b>Restart Claude.</b> If Claude is not listed, restart Studio first.</li>
+      </ol>
+      <div class="callout"><b>Be careful, this can change your game.</b> Studio's server can read and edit the place you have open. Save a version or work on a copy first, keep each request small, and use Ctrl+Z if you don't like a change. If you have several Studio windows open, check Claude is working in the right one. Menu names can change between Studio versions, so if you don't see them, look for MCP in Assistant's settings or check Roblox's documentation.</div>
     </section>
 
     <section id="fix">
@@ -228,6 +242,14 @@ footer{padding:32px 0 52px;border-top:1px solid var(--line);color:var(--ink-2);f
       <details>
         <summary>Can I use it on claude.ai in my browser or on my phone?</summary>
         <p>Not this version. The website and phone app only connect to servers that are hosted online. This one runs on your own computer. Use Claude Desktop or Claude Code.</p>
+      </details>
+      <details>
+        <summary>Claude gives me code but doesn't change my place</summary>
+        <ul>
+          <li>Studio's own MCP server is separate from this one. Turn it on as described above.</li>
+          <li>Check the green connected indicator in Studio's Manage MCP Servers, then restart Claude.</li>
+          <li>Make sure the place you want changed is the one open in Studio.</li>
+        </ul>
       </details>
       <details>
         <summary>How do I remove it?</summary>
@@ -319,4 +341,4 @@ footer{padding:32px 0 52px;border-top:1px solid var(--line);color:var(--ink-2);f
 })();
 </script>
 </body>
-</html>
+          </html>
