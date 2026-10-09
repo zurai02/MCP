@@ -93,7 +93,7 @@ h1{
 .btn:hover{background:var(--blue);border-color:var(--blue);color:#fff}
 .btn.ghost{background:transparent;color:var(--ink)}
 .btn.ghost:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-@media (max-width:860px){.hero-grid{grid-template-columns:1fr;gap:36px}}
+@media (max-width:860px){.hero-grid{grid-template-columns:minmax(0,1fr);gap:36px}}
 
 /* compare panel */
 .panel{background:var(--code-bg);border-radius:14px;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 24px 48px -24px rgba(18,22,29,.5)}
@@ -125,18 +125,18 @@ h2{font-size:clamp(30px,4.2vw,48px);line-height:1.05;letter-spacing:-.03em;font-
 .area p{margin:0 0 12px;color:var(--ink-2)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
 .chips li{font-family:var(--mono);font-size:12.5px;padding:4px 10px;border-radius:6px;background:var(--bg-2);color:var(--ink)}
-@media (max-width:760px){.area{grid-template-columns:1fr;gap:10px}}
+@media (max-width:760px){.area{grid-template-columns:minmax(0,1fr);gap:10px}}
 
 ol.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;counter-reset:s}
 ol.steps li{counter-increment:s;padding-top:18px;border-top:3px solid var(--ink)}
 ol.steps li::before{content:counter(s);display:block;font-weight:800;font-size:15px;color:var(--blue);margin-bottom:6px}
 ol.steps b{display:block;font-size:19px;letter-spacing:-.01em;margin-bottom:6px}
 ol.steps span{color:var(--ink-2);font-size:15.5px}
-@media (max-width:860px){ol.steps{grid-template-columns:1fr 1fr}}
-@media (max-width:520px){ol.steps{grid-template-columns:1fr}}
+@media (max-width:860px){ol.steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){ol.steps{grid-template-columns:minmax(0,1fr)}}
 
 .install-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:40px;align-items:start}
-@media (max-width:860px){.install-grid{grid-template-columns:1fr}}
+@media (max-width:860px){.install-grid{grid-template-columns:minmax(0,1fr)}}
 .install-grid ol{margin:0;padding-left:20px;display:grid;gap:12px;color:var(--ink-2)}
 .install-grid ol b{color:var(--ink)}
 .codebar{display:flex;justify-content:space-between;align-items:center;padding:10px 12px 10px 20px;border-bottom:1px solid rgba(255,255,255,.08);font-family:var(--mono);font-size:12.5px;color:var(--code-dim)}
@@ -145,7 +145,7 @@ ol.steps span{color:var(--ink-2);font-size:15.5px}
 .note{font-size:14px;color:var(--ink-2);margin-top:14px}
 
 .prompts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-@media (max-width:760px){.prompts{grid-template-columns:1fr}}
+@media (max-width:760px){.prompts{grid-template-columns:minmax(0,1fr)}}
 .prompt{
   font:inherit;text-align:left;cursor:pointer;color:var(--ink);background:var(--bg-2);
   border:1.5px solid transparent;border-radius:10px;padding:16px 18px;font-size:16px;line-height:1.45;
@@ -256,7 +256,7 @@ Players.PlayerRemoving:<span class="f">Connect</span>(<span class="k">function</
           <h3>Luau scripting</h3>
           <div>
             <p>Modern, strict Luau: type annotations, the <code>task</code> library, clean module structure, events instead of polling, and the client/server split done properly with RemoteEvents and RemoteFunctions that validate what the client sends.</p>
-            <ul class="chips"><li>--!strict</li><li>ModuleScripts</li><li>RemoteEvents</li><li>DataStores</li><li>task.spawn</li><li>Signals</li></ul>
+            <ul class="chips"><li>--!strict</li><li>ModuleScripts</li><li>RemoteEvents</li><li>DataStores</li><li>task.spawn</li><li>task library</li></ul>
           </div>
         </div>
         <div class="area">
@@ -276,8 +276,8 @@ Players.PlayerRemoving:<span class="f">Connect</span>(<span class="k">function</
         <div class="area">
           <h3>Studio workflow</h3>
           <div>
-            <p>Claude knows where each script belongs (ServerScriptService, ReplicatedStorage, StarterGui, StarterPlayerScripts) and tells you where to put it. It also reads Output errors with you and fixes the actual cause.</p>
-            <ul class="chips"><li>Explorer layout</li><li>Script types</li><li>Output debugging</li><li>Test servers</li><li>Rojo projects</li></ul>
+            <p>Claude knows where each script belongs (ServerScriptService, ReplicatedStorage, StarterGui, StarterPlayerScripts). It reads Output errors with you and fixes the actual cause. Turn on Studio's built-in MCP server and it can make the edit in your place for you.</p>
+            <ul class="chips"><li>Explorer layout</li><li>Script types</li><li>Output debugging</li><li>Test servers</li><li>Studio MCP editing</li></ul>
           </div>
         </div>
       </div>
@@ -288,7 +288,7 @@ Players.PlayerRemoving:<span class="f">Connect</span>(<span class="k">function</
       <p class="sub">You keep chatting with Claude the way you already do. The MCP works behind the scenes.</p>
       <ol class="steps">
         <li><b>You ask</b><span>"Add a shop UI with a coin counter." Plain language is fine.</span></li>
-        <li><b>Claude pulls context</b><span>The MCP supplies Luau and Roblox conventions that fit the request.</span></li>
+        <li><b>Claude pulls context</b><span>It searches the guides and fetches only the section it needs, which keeps token use low.</span></li>
         <li><b>Claude writes it</b><span>Typed scripts and UI structure, each labeled with where it goes in Studio.</span></li>
         <li><b>You test and refine</b><span>Paste an Output error or describe what looks wrong, and iterate.</span></li>
       </ol>
@@ -342,7 +342,11 @@ Players.PlayerRemoving:<span class="f">Connect</span>(<span class="k">function</
       </details>
       <details>
         <summary>Does it edit my game in Roblox Studio directly?</summary>
-        <p>Claude writes the scripts, UI layouts and build instructions, and tells you where they go. You copy them into Studio. Check the GitHub page for anything the current version does beyond that.</p>
+        <p>Yes, when you also turn on Studio's own MCP server (in Studio: Assistant, Manage MCP Servers, Enable Studio as MCP server). This MCP gives Claude the Roblox know-how and checks, and Studio's server lets it read and edit scripts in your open place. Without it, Claude writes the code and tells you where to put it. Studio's server can change your place, so save a version first. The <a href="mcp.html#studio">install page</a> has the steps.</p>
+      </details>
+      <details>
+        <summary>Does it use a lot of tokens?</summary>
+        <p>It is built not to. Claude can search the guides, ask for a one-line-per-section outline, or fetch a single section instead of a whole file. Repeated review findings are grouped into one row, and a long script can be read through a comment-stripping tool. Whole recipes with code cost about the same as before, because they have few comments to remove.</p>
       </details>
       <details>
         <summary>Is it only for experienced developers?</summary>
